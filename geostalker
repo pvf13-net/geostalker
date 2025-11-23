@@ -1,0 +1,83 @@
+#!/bin/bash
+# GeoStalker v3 – Manual + Auto target mode
+# geostalk              → current visitor
+# geostalk 8.8.8.8      → any public IP
+# geostalk -h           → help
+# Coded by Krat0s
+
+show_help() {
+    clear
+    echo -e "\e[38;5;196m"
+    cat << "EOF"
+ ██████╗ ███████╗ ██████╗ ███████╗████████╗ █████╗ ██╗     ██╗  ██╗███████╗██████╗ 
+██╔════╝ ██╔════╝██╔═══██╗██╔════╝╚══██╔══╝██╔══██╗██║     ██║ ██╔╝██╔════╝██╔══██╗
+██║  ███╗█████╗  ██║   ██║███████╗   ██║   ███████║██║     █████╔╝ █████╗  ██████╔╝
+██║   ██║██╔══╝  ██║   ██║╚════██║   ██║   ██╔══██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗
+╚██████╔╝███████╗╚██████╔╝███████║   ██║   ██║  ██║███████╗██║  ██╗███████╗██║  ██║
+ ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+EOF
+    echo -e "\e[38;5;202m                     Remote & Local Target Edition v3\e[0m\n"
+    echo -e " \e[38;5;82mUSAGE\e[0m"
+    echo -e "   geostalk                     → stalk current visitor (you)"
+    echo -e "   geostalk 8.8.8.8             → stalk any public IP"
+    echo -e "   geostalk 192.168.1.69 -f    → force-stalk private IPs (still uses public DBs)"
+    echo -e "   geostalk -h | --help         → this menu\n"
+    echo -e " \e[38;5;196mMade to terrify · Krat0s 2025\e[0m\n"
+    exit 0
+}
+
+[[ "$1" == "-h" || "$1" == "--help" ]] && show_help
+
+# Decide target IP
+if [[ -n "$1" ]]; then
+    if [[ "$1" == "-f" && -n "$2" ]]; then
+        TARGET="$2"
+    elif [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        TARGET="$1"
+        shift
+    else
+        echo -e "\e[31mInvalid IP format\e[0m" && exit 1
+    fi
+else
+    TARGET=$(curl -s https://ipinfo.io/ip || curl -s https://ifconfig.me)
+fi
+
+clear
+echo -e "\e[38;5;196m
+ ██████╗ ███████╗ ██████╗ ███████╗████████╗ █████╗ ██╗     ██╗  ██╗███████╗██████╗ 
+██╔════╝ ██╔════╝██╔═══██╗██╔════╝╚══██╔══╝██╔══██╗██║     ██║ ██╔╝██╔════╝██╔══██╗
+██║  ███╗█████╗  ██║   ██║███████╗   ██║   ███████║██║     █████╔╝ █████╗  ██████╔╝
+██║   ██║██╔══╝  ██║   ██║╚════██║   ██║   ██╔══██║██║     ██╔═██╗ ██╔══╝  ██╔══██╗
+╚██████╔╝███████╗╚██████╔╝███████║   ██║   ██║  ██║███████╗██║  ██╗███████╗██║  ██║
+ ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+\e[0m"
+echo -e "\e[38;5;202m                  Stalking target → $TARGET …\e[0m\n"
+sleep 2.5
+
+JSON=$(curl -s https://ipinfo.io/$TARGET/json)
+[[ "$JSON" =~ "404" || -z "$JSON" ]] && JSON=$(curl -s https://ipapi.co/$TARGET/json)
+[[ -z "$JSON" ]] && { echo -e "\e[31mFailed to reach geo-database\e[0m"; exit 1; }
+
+CITY=$(echo "$JSON" | grep '"city"' | cut -d'"' -f4)
+REGION=$(echo "$JSON" | grep '"region"' | cut -d'"' -f4)
+COUNTRY=$(echo "$JSON" | grep '"country"' | cut -d'"' -f4)
+ISP=$(echo "$JSON" | grep '"org"' | cut -d'"' -f4)
+LOC=$(echo "$JSON" | grep '"loc"' | cut -d'"' -f4)
+TZ=$(echo "$JSON" | grep '"timezone"' | cut -d'"' -f4)
+
+echo -e "\e[38;5;226m[+] Target locked:\e[0m $TARGET\n"
+echo -e "\e[38;5;82mLocation    →\e[0m ${CITY:-Unknown}, ${REGION:-?}, ${COUNTRY:-??}"
+echo -e "\e[38;5;82mISP/Org     →\e[0m ${ISP:-Unknown}"
+echo -e "\e[38;5;82mCoordinates →\e[0m ${LOC:-?.??????}"
+echo -e "\e[38;5;82mTimezone    →\e[0m ${TZ:-Unknown}\e[0m\n"
+sleep 2
+
+echo -e "\e[38;5;196mLive traceroute simulation…\e[0m\n"
+for i in {1..14}; do
+    printf " %2d  \e[38;5;240m%s.%s.%s.%s\e[0m   %3d ms\n" $i \
+           $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%256)) $((RANDOM%120+20))
+    sleep 0.25
+done
+
+echo -e "\n\e[38;5;196m   TARGET ACQUIRED AND EXPOSED\e[0m"
+echo -e "\e[38;5;202m   Nothing is private anymore.\e[0m\n"
